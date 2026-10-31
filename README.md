@@ -1,4 +1,4 @@
-# VidyaPramaan (विद्याप्रमाण)
+# VidyaPramaan
 
 An APAAR ID-based student enrolment verification and governance platform for AICTE-approved institutions. 
 
