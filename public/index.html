@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VidyaPramaan | AICTE APAAR Student Verification Platform</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    h1, h2, h3, h4, .font-heading { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .badge-pass { background-color: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .badge-fail { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-warn { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+    .badge-info { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 antialiased min-h-screen flex flex-col">
+
+  <!-- TOP GOV BAR -->
+  <div class="bg-slate-900 text-slate-300 text-xs py-1.5 px-4 sm:px-8 flex justify-between items-center border-b border-slate-800">
+    <div class="flex items-center space-x-2">
+      <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <span class="font-medium text-slate-200">National Academic Identity & Enrolment Verification Grid</span>
+      <span class="text-slate-500">|</span>
+      <span class="text-slate-400">All India Council for Technical Education (AICTE)</span>
+    </div>
+    <div class="flex items-center space-x-4">
+      <span class="bg-indigo-950 text-indigo-300 px-2 py-0.5 rounded border border-indigo-800 text-[11px] font-semibold">NEP 2020 · One Nation One Student ID</span>
+      <span id="currentTime" class="text-slate-400 text-[11px]"></span>
+    </div>
+  </div>
+
+  <!-- MAIN HEADER & NAVIGATION -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Brand -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-amber-500 flex items-center justify-center text-white font-extrabold text-xl shadow-md">
+            VP
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-heading font-extrabold text-xl tracking-tight text-slate-900">Vidya<span class="text-indigo-600">Pramaan</span></span>
+              <span class="text-xs bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">विद्याप्रमाण</span>
+            </div>
+            <p class="text-[11px] text-slate-500 font-medium">APAAR Enrolment Verification & Regulatory Seat Governance</p>
+          </div>
+        </div>
+
+        <!-- Portal Switcher Nav -->
+        <nav class="flex space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-semibold">
+          <button onclick="switchPortal('aicte')" id="tab-aicte" class="portal-tab px-3 py-2 rounded-lg text-slate-700 hover:text-indigo-600 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-building-columns text-sm text-indigo-600"></i>
+            <span>AICTE Central Command</span>
+          </button>
+          <button onclick="switchPortal('institution')" id="tab-institution" class="portal-tab px-3 py-2 rounded-lg text-slate-700 hover:text-indigo-600 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-graduation-cap text-sm text-blue-600"></i>
+            <span>Institution Portal</span>
+          </button>
+          <button onclick="switchPortal('student')" id="tab-student" class="portal-tab px-3 py-2 rounded-lg text-slate-700 hover:text-indigo-600 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-user-check text-sm text-emerald-600"></i>
+            <span>Student Portal</span>
+          </button>
+          <button onclick="switchPortal('verifier')" id="tab-verifier" class="portal-tab px-3 py-2 rounded-lg text-slate-700 hover:text-indigo-600 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-qrcode text-sm text-purple-600"></i>
+            <span>Public Verifier</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ONE-CLICK DEMO SCENARIOS BAR -->
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-4 py-2 border-t border-indigo-900/50">
+      <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div class="flex items-center space-x-2 font-semibold text-amber-400">
+          <i class="fa-solid fa-bolt"></i>
+          <span>Live Demo Scenarios:</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5">
+          <button onclick="runScenario('genuine')" class="px-2.5 py-1 bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 rounded text-emerald-300 font-medium transition">
+            🟢 1. Genuine Student (VC Issued)
+          </button>
+          <button onclick="runScenario('ghost')" class="px-2.5 py-1 bg-red-600/30 hover:bg-red-600/50 border border-red-500/40 rounded text-red-300 font-medium transition">
+            🔴 2. Ghost Student (Fake APAAR)
+          </button>
+          <button onclick="runScenario('duplicate')" class="px-2.5 py-1 bg-orange-600/30 hover:bg-orange-600/50 border border-orange-500/40 rounded text-orange-300 font-medium transition">
+            🟠 3. Cross-College Duplicate
+          </button>
+          <button onclick="runScenario('nri')" class="px-2.5 py-1 bg-yellow-600/30 hover:bg-yellow-600/50 border border-yellow-500/40 rounded text-yellow-300 font-medium transition">
+            ⚠️ 4. NRI Quota Breach (APH 4.3.2)
+          </button>
+          <button onclick="runScenario('dispute')" class="px-2.5 py-1 bg-purple-600/30 hover:bg-purple-600/50 border border-purple-500/40 rounded text-purple-300 font-medium transition">
+            🚨 5. Student Disputed Admission
+          </button>
+          <button onclick="resetDemo()" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-slate-300 transition ml-2">
+            <i class="fa-solid fa-arrows-rotate mr-1"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ======================================================== -->
+    <!-- PORTAL 1: AICTE CENTRAL COMMAND DASHBOARD -->
+    <!-- ======================================================== -->
+    <div id="view-aicte" class="portal-view space-y-6">
+      
+      <!-- KPI Row -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3" id="aicte-kpi-container">
+        <!-- Populated via JS -->
+      </div>
+
+      <!-- AICTE Sub Tabs -->
+      <div class="flex border-b border-slate-200 space-x-6 text-sm font-semibold">
+        <button onclick="switchAicteTab('queue')" id="atab-queue" class="aicte-subtab pb-3 border-b-2 border-indigo-600 text-indigo-600 flex items-center space-x-2">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+          <span>Priority Risk Queue</span>
+          <span id="queue-badge" class="bg-red-100 text-red-700 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button onclick="switchAicteTab('ledger')" id="atab-ledger" class="aicte-subtab pb-3 text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+          <i class="fa-solid fa-scale-balanced text-blue-500"></i>
+          <span>National Seat Ledger & Regulatory Violations</span>
+        </button>
+        <button onclick="switchAicteTab('audit')" id="atab-audit" class="aicte-subtab pb-3 text-slate-500 hover:text-slate-800 flex items-center space-x-2">
+          <i class="fa-solid fa-fingerprint text-purple-500"></i>
+          <span>Immutable Audit Log</span>
+        </button>
+      </div>
+
+      <!-- 1A. Priority Risk Queue & Case Adjudication Studio -->
+      <div id="aicte-subview-queue" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Queue List (5 Cols) -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-4 flex flex-col h-[650px]">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h3 class="font-heading font-bold text-slate-900 text-base">Priority Investigation Queue</h3>
+              <p class="text-xs text-slate-500">Sorted by Anomaly Risk Score (ML-prioritized)</p>
+            </div>
+            <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2 py-1 rounded-md border border-indigo-200">
+              Human-in-the-Loop
+            </span>
+          </div>
+
+          <div id="riskQueueList" class="flex-1 overflow-y-auto space-y-2.5 custom-scrollbar pr-1">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Adjudication Studio (7 Cols) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-6 flex flex-col h-[650px] overflow-y-auto custom-scrollbar" id="caseReviewPanel">
+          <div class="flex items-center justify-center h-full text-slate-400 flex-col space-y-2">
+            <i class="fa-regular fa-folder-open text-4xl"></i>
+            <p class="text-sm">Select an enrolment claim from the Risk Queue to inspect multi-layer evidence</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 1B. National Seat Ledger Subview -->
+      <div id="aicte-subview-ledger" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h3 class="font-heading font-bold text-slate-900 text-lg">National Intake Ledger & APH Statutory Violations</h3>
+              <p class="text-xs text-slate-500">Continuous monitoring of approved intake vs actual admissions categorized under AICTE APH 2026-27</p>
+            </div>
+            <span class="bg-amber-50 text-amber-800 text-xs font-bold px-3 py-1 rounded-lg border border-amber-200">
+              Real-time Ledger Audit
+            </span>
+          </div>
+          <div id="nationalLedgerContent" class="overflow-x-auto">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 1C. Immutable Audit Trail Subview -->
+      <div id="aicte-subview-audit" class="hidden">
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h3 class="font-heading font-bold text-slate-900 text-lg">Immutable Regulatory Audit Trail</h3>
+              <p class="text-xs text-slate-500">Cryptographically linked state transitions of all claims, student actions, and officer adjudications</p>
+            </div>
+            <span class="text-xs text-slate-500 font-mono">Algorithm: SHA-256 + Ed25519</span>
+          </div>
+          <div id="auditLogList" class="space-y-2 max-h-[550px] overflow-y-auto custom-scrollbar">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PORTAL 2: INSTITUTION PORTAL -->
+    <!-- ======================================================== -->
+    <div id="view-institution" class="portal-view hidden space-y-6">
+      
+      <!-- Top Bar: Institution Selector & Compliance Card -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center text-xl font-bold">
+            <i class="fa-solid fa-university"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <label class="text-xs font-semibold text-slate-500">Active Institution:</label>
+              <select id="instSelect" onchange="loadInstitutionData()" class="font-heading font-bold text-base text-slate-900 bg-slate-50 border border-slate-300 rounded-lg px-2.5 py-1 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <!-- Populated via JS -->
+              </select>
+            </div>
+            <p id="instSubDetails" class="text-xs text-slate-500 mt-0.5"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4 bg-slate-50 px-4 py-2.5 rounded-xl border border-slate-200">
+          <div>
+            <div class="text-[11px] text-slate-500 font-semibold">AICTE Compliance Score</div>
+            <div id="instComplianceScore" class="font-extrabold text-xl text-emerald-600">--%</div>
+          </div>
+          <div class="h-8 w-px bg-slate-300"></div>
+          <div>
+            <div class="text-[11px] text-slate-500 font-semibold">Claims Uploaded</div>
+            <div id="instTotalClaims" class="font-extrabold text-xl text-indigo-600">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Institutional Seat Matrix Ledger Grid -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+        <h3 class="font-heading font-bold text-slate-900 text-base mb-3 flex items-center justify-between">
+          <span>Programme Seat Matrix Ledger (B.Tech CSE - 2026-27)</span>
+          <span class="text-xs font-normal text-slate-500">Category quotas as sanctioned in AICTE Approval Letter (EoA)</span>
+        </h3>
+        <div id="instSeatMatrixGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- Ingestion & Upload Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Single Student Claim Submission (5 Cols) -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+          <h4 class="font-heading font-bold text-slate-900 text-sm mb-3 flex items-center space-x-2">
+            <i class="fa-solid fa-user-plus text-indigo-600"></i>
+            <span>Register Enrolment Claim</span>
+          </h4>
+
+          <form id="singleClaimForm" onsubmit="submitSingleClaim(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">APAAR ID (12-Digit Master Key) *</label>
+              <input type="text" id="claimApaar" placeholder="e.g. 910248193820" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" required>
+              <span class="text-[10px] text-slate-500">Leave blank or enter provisional to trigger alternative identity track</span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Student Full Name *</label>
+                <input type="text" id="claimName" placeholder="As per Aadhaar/APAAR" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Date of Birth *</label>
+                <input type="date" id="claimDob" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none" required>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Seat Category *</label>
+                <select id="claimSeatType" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                  <option value="Regular">Regular</option>
+                  <option value="Supernumerary_EWS">Supernumerary (EWS)</option>
+                  <option value="NRI">NRI (15% Cap)</option>
+                  <option value="FN">Foreign National (FN)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Allotment Authority</label>
+                <select id="claimAuthority" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                  <option value="State CET Cell (Maharashtra)">State CET Cell</option>
+                  <option value="JoSAA (Central)">JoSAA (Central)</option>
+                  <option value="Institutional Admission">Institutional Quota</option>
+                  <option value="Management Quota">Management Quota</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Allotment Reference ID</label>
+                <input type="text" id="claimAllotmentRef" placeholder="e.g. MHT-CET-2026-ABC-01" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono">
+              </div>
+              <div>
+                <label class="block font-semibold text-slate-700 mb-1">Fee Receipt Reference</label>
+                <input type="text" id="claimFeeRef" placeholder="TXN8392019" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none font-mono" required>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition shadow-sm flex items-center justify-center space-x-1.5">
+              <i class="fa-solid fa-shield-halved"></i>
+              <span>Submit & Execute 5-Layer Verification</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Bulk Upload & Live Claims Table (7 Cols) -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 p-5 shadow-sm flex flex-col">
+          <div class="flex justify-between items-center mb-3">
+            <div>
+              <h4 class="font-heading font-bold text-slate-900 text-sm">Institutional Student Claims & Verification Ledger</h4>
+              <p class="text-xs text-slate-500">Live verification status across all 5 autonomous layers</p>
+            </div>
+            <button onclick="triggerSampleBulkUpload()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-300 transition flex items-center space-x-1">
+              <i class="fa-solid fa-file-csv text-emerald-600"></i>
+              <span>Simulate Bulk CSV Upload</span>
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-x-auto overflow-y-auto max-h-[460px] custom-scrollbar border border-slate-100 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky top-0">
+                <tr>
+                  <th class="p-2.5">Claim ID</th>
+                  <th class="p-2.5">Student Details</th>
+                  <th class="p-2.5">Category</th>
+                  <th class="p-2.5">5-Layer Checks</th>
+                  <th class="p-2.5">Risk</th>
+                  <th class="p-2.5">Status</th>
+                </tr>
+              </thead>
+              <tbody id="instClaimsTableBody" class="divide-y divide-slate-100">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PORTAL 3: STUDENT PORTAL -->
+    <!-- ======================================================== -->
+    <div id="view-student" class="portal-view hidden space-y-6">
+      
+      <!-- Student Selector Bar -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-3">
+        <div class="flex items-center space-x-2">
+          <label class="text-xs font-semibold text-slate-500">Select Student Identity Persona:</label>
+          <select id="studentSelect" onchange="loadStudentData()" class="font-heading font-bold text-sm text-slate-900 bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <option value="910248193820">Rohan Sharma (APAAR: 9102-4819-3820 - Disputed Claim Demo)</option>
+            <option value="820194827103">Ananya Verma (APAAR: 8201-9482-7103 - Verified W3C VC Demo)</option>
+            <option value="730284719284">Vikramaditya Rao (APAAR: 7302-8471-9284 - Duplicate Enrolment Demo)</option>
+          </select>
+        </div>
+        <div class="text-xs text-slate-500 flex items-center space-x-2">
+          <i class="fa-solid fa-lock text-emerald-600"></i>
+          <span>Independent Channel: Connected via DigiLocker / Aadhaar Vault</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: APAAR Digital Identity Card (4 Cols) -->
+        <div class="lg:col-span-4 space-y-4">
+          <div class="bg-gradient-to-br from-indigo-900 via-blue-900 to-slate-900 text-white rounded-2xl p-6 shadow-xl relative overflow-hidden border border-indigo-700/50">
+            <!-- Background watermark -->
+            <div class="absolute -right-8 -bottom-8 opacity-10 text-9xl font-extrabold select-none pointer-events-none">
+              APAAR
+            </div>
+
+            <div class="flex justify-between items-start mb-6">
+              <div>
+                <div class="text-[10px] tracking-widest uppercase text-indigo-300 font-semibold">Government of India</div>
+                <div class="text-xs font-bold text-amber-400">Automated Permanent Academic Account Registry</div>
+              </div>
+              <div class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs font-bold border border-white/20">
+                IN
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-4 mb-6">
+              <div class="w-16 h-16 rounded-xl bg-white/20 border border-white/30 flex items-center justify-center text-2xl font-bold text-white shadow-inner">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <div>
+                <h4 id="cardStudentName" class="font-heading font-extrabold text-lg text-white">---</h4>
+                <div class="text-xs text-indigo-200 flex items-center space-x-2 mt-0.5">
+                  <span id="cardStudentGender">--</span>
+                  <span>·</span>
+                  <span>DOB: <span id="cardStudentDob">--</span></span>
+                </div>
+                <div class="text-[11px] text-emerald-300 font-medium mt-1">
+                  <i class="fa-solid fa-circle-check text-[10px] mr-1"></i> Aadhaar e-KYC Verified
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-black/30 backdrop-blur-sm rounded-xl p-3 border border-white/10">
+              <div class="text-[10px] uppercase tracking-wider text-slate-300 font-semibold">APAAR Identifier</div>
+              <div id="cardApaarId" class="font-mono font-extrabold text-xl tracking-wider text-amber-300">
+                ---- ---- ----
+              </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-white/10 flex justify-between items-center text-[10px] text-slate-300">
+              <span>Academic Bank of Credits (ABC) Enabled</span>
+              <span>NEP 2020 Compliant</span>
+            </div>
+          </div>
+
+          <!-- Independent Contact Discovery Notice -->
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-800 space-y-1">
+            <div class="font-bold flex items-center space-x-1.5 text-amber-900">
+              <i class="fa-solid fa-shield-heart text-amber-600"></i>
+              <span>Anti-Tamper Contact Discovery</span>
+            </div>
+            <p>
+              Notifications for admission verification are sent strictly to the mobile number registered in the master APAAR vault, guaranteeing institutions cannot intercept student consent.
+            </p>
+          </div>
+        </div>
+
+        <!-- Right Column: Enrolment Claims & Confirmation Studio (8 Cols) -->
+        <div class="lg:col-span-8 space-y-6">
+          
+          <!-- Enrolment Claims Action Studio -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h3 class="font-heading font-bold text-slate-900 text-lg">Enrolment Claims Recorded in AICTE Registry</h3>
+                <p class="text-xs text-slate-500">Institutions claiming your enrolment for Academic Year 2026-27</p>
+              </div>
+              <span class="text-xs bg-indigo-50 text-indigo-700 font-semibold px-2.5 py-1 rounded-md border border-indigo-200">
+                Direct Learner Governance
+              </span>
+            </div>
+
+            <div id="studentClaimsContainer" class="space-y-4">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- Issued W3C Verifiable Credentials Wallet -->
+          <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <div>
+                <h3 class="font-heading font-bold text-slate-900 text-lg">Verifiable Academic Credentials Wallet</h3>
+                <p class="text-xs text-slate-500">Cryptographically signed W3C-standard digital credentials (Ed25519)</p>
+              </div>
+              <span class="text-xs bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded-md border border-emerald-200">
+                Instant Offline QR Verification
+              </span>
+            </div>
+
+            <div id="studentCredentialsContainer" class="space-y-4">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- PORTAL 4: PUBLIC CREDENTIAL VERIFIER -->
+    <!-- ======================================================== -->
+    <div id="view-verifier" class="portal-view hidden space-y-6">
+      
+      <div class="max-w-3xl mx-auto bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
+        <div class="text-center space-y-2 mb-8">
+          <div class="w-16 h-16 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center mx-auto text-2xl font-bold shadow-sm">
+            <i class="fa-solid fa-qrcode"></i>
+          </div>
+          <h2 class="font-heading font-extrabold text-2xl text-slate-900">National Credential Verification Portal</h2>
+          <p class="text-xs text-slate-500 max-w-lg mx-auto">
+            Authorized employers, higher education institutions, and regulatory bodies can independently verify any AICTE countersigned enrolment credential via cryptographic proof.
+          </p>
+        </div>
+
+        <!-- Verification Search Bar -->
+        <div class="flex space-x-2 mb-6">
+          <input type="text" id="verifyInputCode" placeholder="Enter Credential Verification Code (e.g. VP-XXXX)" class="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:outline-none font-mono text-sm uppercase">
+          <button onclick="verifyCodeFromInput()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl transition shadow-sm flex items-center space-x-2">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <span>Verify Credential</span>
+          </button>
+        </div>
+
+        <!-- Sample verification codes for instant testing -->
+        <div class="flex items-center space-x-2 text-xs text-slate-500 mb-8">
+          <span>Quick Test Samples:</span>
+          <div id="quickVerifySamples" class="flex space-x-2">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Verification Result Card -->
+        <div id="verificationResultBox" class="hidden">
+          <!-- Populated via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 mt-auto py-4 px-8 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+      <div>
+        <span class="font-bold text-slate-700">VidyaPramaan</span> — Smart India Hackathon (SIH 2026) Working Prototype
+      </div>
+      <div class="flex space-x-4 text-slate-400">
+        <span>Ministry of Education (MoE)</span>
+        <span>·</span>
+        <span>AICTE Technical Portal</span>
+        <span>·</span>
+        <span>DigiLocker & ABC Grid</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

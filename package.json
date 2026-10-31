@@ -1,0 +1,19 @@
+{
+  "name": "sih26263",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "seed": "node -e \"require('./server/seedData').seedDatabase()\"",
+    "test": "node test/prototype.test.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "multer": "^2.5.0"
+  }
+}
