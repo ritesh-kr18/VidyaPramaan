@@ -24,16 +24,16 @@ function switchPortal(portal) {
   currentPortal = portal;
   document.querySelectorAll('.portal-view').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.portal-tab').forEach(el => {
-    el.classList.remove('bg-white', 'text-indigo-600', 'shadow-sm');
-    el.classList.add('text-slate-700');
+    el.classList.remove('bg-white', 'text-blue-900', 'shadow-xs', 'border-slate-300');
+    el.classList.add('text-slate-600');
   });
 
   const activeView = document.getElementById(`view-${portal}`);
   const activeTab = document.getElementById(`tab-${portal}`);
   if (activeView) activeView.classList.remove('hidden');
   if (activeTab) {
-    activeTab.classList.add('bg-white', 'text-indigo-600', 'shadow-sm');
-    activeTab.classList.remove('text-slate-700');
+    activeTab.classList.add('bg-white', 'text-blue-900', 'shadow-xs', 'border-slate-300');
+    activeTab.classList.remove('text-slate-600');
   }
 
   if (portal === 'aicte') {
@@ -130,7 +130,24 @@ async function loadAicteData() {
 
     const listEl = document.getElementById('riskQueueList');
     if (queue.length === 0) {
-      listEl.innerHTML = `<div class="p-4 text-center text-xs text-slate-400">No anomalous claims in priority queue.</div>`;
+      listEl.innerHTML = `
+        <div class="p-8 text-center text-xs text-slate-400">
+          <i class="fa-solid fa-inbox text-3xl mb-2 text-slate-300 block"></i>
+          <span class="font-semibold text-slate-600 block text-xs">Priority Risk Queue Empty</span>
+          <span class="text-[11px] text-slate-400 mt-1 block">No enrolment claims or anomalies in queue.<br>Switch to the <strong>Institution Portal</strong> to upload student enrolment claims.</span>
+        </div>`;
+      const panel = document.getElementById('caseReviewPanel');
+      if (panel) {
+        panel.innerHTML = `
+          <div class="flex items-center justify-center h-full text-slate-400 flex-col space-y-3 p-8 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mb-1">
+              <i class="fa-regular fa-folder-open text-2xl"></i>
+            </div>
+            <h4 class="font-bold text-slate-700 text-sm">Case Evidence Dossier Inactive</h4>
+            <p class="text-xs text-slate-500 max-w-sm">No active claims are under review. Go to the <strong>Institution Portal</strong> to upload student enrolment data, or select an inspection case above.</p>
+          </div>
+        `;
+      }
     } else {
       listEl.innerHTML = queue.map(c => {
         let badgeColor = 'bg-slate-100 text-slate-700';
@@ -168,11 +185,11 @@ async function loadAicteData() {
           </div>
         `;
       }).join('');
-    }
 
-    // Auto-select first item if none active
-    if (!activeCaseClaimId && queue.length > 0) {
-      inspectCase(queue[0].id);
+      // Auto-select first item if none active
+      if (!activeCaseClaimId && queue.length > 0) {
+        inspectCase(queue[0].id);
+      }
     }
 
   } catch (err) {
@@ -318,17 +335,22 @@ async function inspectCase(claimId) {
             <textarea id="adjudicateReason" placeholder="Enter formal regulatory decision remarks or statutory justification..." class="w-full text-xs p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white" rows="2"></textarea>
           </div>
 
-          <div class="flex space-x-2 pt-1">
-            <button onclick="submitAdjudication('${claim.id}', 'COUNTERSIGN')" ${isCountersigned ? 'disabled' : ''} class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center space-x-1">
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="submitAdjudication('${claim.id}', 'COUNTERSIGN')" ${isCountersigned ? 'disabled' : ''} class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center space-x-1 min-w-[130px]">
               <i class="fa-solid fa-stamp"></i>
-              <span>${isCountersigned ? 'Already Countersigned' : 'COUNTERSIGN & MINT W3C VC'}</span>
+              <span>${isCountersigned ? 'Countersigned' : 'COUNTERSIGN & MINT VC'}</span>
             </button>
-            <button onclick="submitAdjudication('${claim.id}', 'REJECT')" ${isRejected ? 'disabled' : ''} class="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center space-x-1">
+            <button onclick="submitAdjudication('${claim.id}', 'REJECT')" ${isRejected ? 'disabled' : ''} class="flex-1 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center space-x-1 min-w-[110px]">
               <i class="fa-solid fa-ban"></i>
-              <span>${isRejected ? 'Already Rejected' : 'REJECT ENROLMENT'}</span>
+              <span>${isRejected ? 'Rejected' : 'REJECT'}</span>
             </button>
-            <button onclick="submitAdjudication('${claim.id}', 'AUDIT_REQUEST')" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition flex items-center justify-center">
-              <i class="fa-solid fa-magnifying-glass mr-1"></i> Audit
+            <button onclick="requestOfficerInfo('${claim.id}')" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition flex items-center justify-center space-x-1">
+              <i class="fa-solid fa-circle-question"></i>
+              <span>Request Info</span>
+            </button>
+            <button onclick="rerunVerification('${claim.id}')" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition flex items-center justify-center space-x-1" title="Re-execute 5-Layer Verification Engine">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Re-run Checks</span>
             </button>
           </div>
         </div>
@@ -357,6 +379,43 @@ async function submitAdjudication(claimId, decision) {
     }
   } catch (err) {
     alert('Failed to record adjudication: ' + err.message);
+  }
+}
+
+// AICTE Officer Request Additional Documentation (Section 9.2)
+async function requestOfficerInfo(claimId) {
+  const notes = prompt('Enter specific documents or clarification required from the college:', 'Please provide verified state counselling allotment slip and attested fee receipt.');
+  if (!notes) return;
+
+  try {
+    const res = await fetch(`/api/aicte/claims/${claimId}/request-info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notes, requested_documents: notes })
+    });
+    const data = await res.json();
+    if (data.success) {
+      alert('Formal request issued! Claim marked UNDER_INVESTIGATION.');
+      inspectCase(claimId);
+      loadAicteData();
+    }
+  } catch (err) {
+    alert('Error requesting info: ' + err.message);
+  }
+}
+
+// Re-run Verification Pipeline on Demand (Section 9.3)
+async function rerunVerification(claimId) {
+  try {
+    const res = await fetch(`/api/verification/${claimId}/rerun`, { method: 'POST' });
+    const data = await res.json();
+    if (data.success) {
+      alert(`Pipeline re-executed! Updated Status: ${data.pipelineResult.newStatus}, Risk Score: ${data.pipelineResult.riskAnalysis.riskScore}`);
+      inspectCase(claimId);
+      loadAicteData();
+    }
+  } catch (err) {
+    alert('Error re-running pipeline: ' + err.message);
   }
 }
 
@@ -427,6 +486,15 @@ async function loadAuditLogs() {
   try {
     const res = await fetch('/api/aicte/audit-logs');
     const { logs } = await res.json();
+    if (!logs || logs.length === 0) {
+      listEl.innerHTML = `
+        <div class="p-8 text-center text-slate-400 text-xs">
+          <i class="fa-solid fa-fingerprint text-2xl mb-2 text-slate-300 block"></i>
+          <span class="font-semibold text-slate-600 block text-xs">Immutable Audit Log Initialized</span>
+          <span class="text-[11px] text-slate-400 mt-0.5 block">Cryptographic state transitions will appear here in real-time as enrolment claims are ingested and processed.</span>
+        </div>`;
+      return;
+    }
     listEl.innerHTML = logs.map(l => `
       <div class="p-2.5 rounded-lg border border-slate-200 bg-white text-xs flex justify-between items-center hover:bg-slate-50">
         <div>
@@ -467,7 +535,8 @@ async function loadInstitutionData() {
     const { institution, stats } = await sumRes.json();
 
     document.getElementById('instSubDetails').textContent = `AICTE ID: ${institution.aicte_id} · ${institution.state}, ${institution.district} · ${institution.institution_type}`;
-    document.getElementById('instComplianceScore').textContent = `${institution.compliance_score}%`;
+    const compScore = (stats.total_claims === 0) ? 100 : (institution.compliance_score || 100);
+    document.getElementById('instComplianceScore').textContent = `${compScore}%`;
     document.getElementById('instTotalClaims').textContent = stats.total_claims || 0;
 
     // 2. Seat Matrix
@@ -501,8 +570,17 @@ async function loadInstitutionData() {
     const { claims } = await claimsRes.json();
 
     const tbody = document.getElementById('instClaimsTableBody');
-    if (claims.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">No enrolment claims submitted yet.</td></tr>`;
+    if (!claims || claims.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="6" class="p-8 text-center text-slate-400">
+            <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2 text-slate-300 block"></i>
+            <span class="font-semibold text-slate-600 block text-xs">No Enrolment Claims Submitted Yet</span>
+            <span class="text-[11px] text-slate-400 mt-1 block max-w-md mx-auto">
+              This institution currently has 0 student records. Click <strong>Upload CSV</strong> above to submit <code class="font-mono bg-slate-100 px-1 py-0.5 rounded text-indigo-600">demo_live_batch.csv</code> or register a single claim to begin autonomous 5-layer verification.
+            </span>
+          </td>
+        </tr>`;
     } else {
       tbody.innerHTML = claims.map(c => {
         let badgeColor = 'bg-slate-100 text-slate-700';
@@ -614,6 +692,39 @@ async function triggerSampleBulkUpload() {
   }
 }
 
+// Real CSV File Upload Handler (Section 5.1 & 8.1)
+function handleRealCsvUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const csvText = e.target.result;
+    try {
+      const res = await fetch('/api/claims/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          institution_id: selectedInstitutionId,
+          csv_data: csvText
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Success! Uploaded & processed ${data.totalUploaded} student records from ${file.name}. 5-Layer verification executed.`);
+        loadInstitutionData();
+      } else {
+        alert('Upload failed: ' + data.error);
+      }
+    } catch (err) {
+      alert('Error uploading CSV: ' + err.message);
+    }
+    // reset input
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
 // ==========================================
 // 3. STUDENT PORTAL CONTROLLER
 // ==========================================
@@ -631,8 +742,15 @@ async function loadStudentData() {
 
     // 2. Enrolment Claims
     const claimsContainer = document.getElementById('studentClaimsContainer');
-    if (claims.length === 0) {
-      claimsContainer.innerHTML = `<div class="p-6 text-center text-slate-400 text-xs">No active admission claims recorded for your APAAR ID.</div>`;
+    if (!claims || claims.length === 0) {
+      claimsContainer.innerHTML = `
+        <div class="p-8 text-center text-slate-400 text-xs bg-slate-50 rounded-xl border border-dashed border-slate-200">
+          <i class="fa-solid fa-user-clock text-3xl mb-2 text-slate-300 block"></i>
+          <span class="font-semibold text-slate-600 block text-xs">No Enrolment Claims Recorded</span>
+          <span class="text-[11px] text-slate-400 mt-1 block max-w-sm mx-auto">
+            No institution has submitted an enrolment claim for this APAAR ID yet. Once an institution registers an admission claim, it will appear here for your cryptographic confirmation or dispute.
+          </span>
+        </div>`;
     } else {
       claimsContainer.innerHTML = claims.map(c => {
         const isDisputed = c.confirmation_status === 'DISPUTED';
@@ -699,9 +817,12 @@ async function loadStudentData() {
             <div class="text-slate-600">${vc.institution_name} · ${vc.academic_year}</div>
             <div class="font-mono text-[11px] text-indigo-700 font-semibold">Verification Code: ${vc.verification_code}</div>
             
-            <div class="pt-2 flex space-x-2">
+            <div class="pt-2 flex flex-wrap gap-2">
               <button onclick="copyVerifyCode('${vc.verification_code}')" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 font-semibold text-[11px] transition shadow-sm">
                 <i class="fa-regular fa-copy mr-1"></i> Copy Code
+              </button>
+              <button onclick="shareSelectiveDisclosure('${vc.verification_code}')" class="px-3 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 rounded-lg font-semibold text-[11px] transition shadow-sm" title="Share with selective disclosure: hide personal attributes">
+                <i class="fa-solid fa-share-nodes mr-1"></i> Selective Share
               </button>
               <button onclick="switchToVerifierWithCode('${vc.verification_code}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold text-[11px] transition shadow-sm">
                 <i class="fa-solid fa-qrcode mr-1"></i> Test in Verifier
@@ -756,6 +877,32 @@ function copyVerifyCode(code) {
   alert(`Verification Code ${code} copied to clipboard!`);
 }
 
+// Student Selective Disclosure Presentation Generator (Section 8.3 & 12)
+async function shareSelectiveDisclosure(code) {
+  const discloseDob = confirm('Do you want to disclose your Date of Birth to the verifier?\n[OK = Yes, Cancel = Keep Private/Hidden]');
+  const discloseApaar = confirm('Do you want to disclose your full APAAR ID to the verifier?\n[OK = Yes, Cancel = Keep Private/Hidden]');
+
+  const disclosed_fields = ['studentName', 'institution', 'programme', 'academicYear'];
+  if (discloseDob) disclosed_fields.push('dateOfBirth');
+  if (discloseApaar) disclosed_fields.push('apaarId');
+
+  try {
+    const res = await fetch(`/api/student/credentials/${code}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ disclosed_fields })
+    });
+    const data = await res.json();
+    if (data.success) {
+      const p = data.presentation;
+      const sharedFieldsStr = Object.keys(p.fields).map(k => ` • ${k}: ${p.fields[k]}`).join('\n');
+      alert(`🔐 Selective Disclosure Presentation Created!\n\nPresentation ID: ${p.presentationId}\nDigital Proof: Ed25519 (Signed)\n\nDisclosed Attributes:\n${sharedFieldsStr}\n\nAll other personal attributes are cryptographically sealed & hidden from verifiers.`);
+    }
+  } catch (err) {
+    alert('Failed to generate selective disclosure: ' + err.message);
+  }
+}
+
 function switchToVerifierWithCode(code) {
   switchPortal('verifier');
   document.getElementById('verifyInputCode').value = code;
@@ -768,19 +915,36 @@ function switchToVerifierWithCode(code) {
 async function loadQuickVerifySamples() {
   const container = document.getElementById('quickVerifySamples');
   try {
-    const res = await fetch('/api/aicte/claims/claim_ananya');
-    const { claim } = await res.json();
-    if (claim && claim.verification_code) {
+    const res = await fetch('/api/credentials/latest');
+    const { credential } = await res.json();
+    if (credential && credential.verification_code) {
       container.innerHTML = `
-        <button onclick="document.getElementById('verifyInputCode').value='${claim.verification_code}'; verifyCodeFromInput();" class="bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded font-mono font-bold hover:bg-purple-100">
-          ${claim.verification_code} (${claim.student_name})
+        <button onclick="document.getElementById('verifyInputCode').value='${credential.verification_code}'; verifyCodeFromInput();" class="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-3 py-1 rounded-lg font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs">
+          <i class="fa-solid fa-certificate text-purple-600"></i>
+          <span>Verify Live: ${credential.verification_code} (${credential.student_name})</span>
+        </button>
+        <button onclick="document.getElementById('verifyInputCode').value='VP-SAMPLE-2026'; verifyCodeFromInput();" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-lg font-mono text-xs font-semibold transition cursor-pointer">
+          <span>AICTE Sample Key (VP-SAMPLE-2026)</span>
         </button>
       `;
     } else {
-      container.innerHTML = `<span class="italic text-slate-400">Mint a credential in AICTE dashboard first</span>`;
+      container.innerHTML = `
+        <button onclick="document.getElementById('verifyInputCode').value='VP-SAMPLE-2026'; verifyCodeFromInput();" class="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-3 py-1 rounded-lg font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs">
+          <i class="fa-solid fa-certificate text-purple-600"></i>
+          <span>Sample: VP-SAMPLE-2026 (Priya Patel)</span>
+        </button>
+        <button onclick="document.getElementById('verifyInputCode').value='640192837465'; verifyCodeFromInput();" class="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 px-2.5 py-1 rounded-lg font-mono text-xs font-semibold transition cursor-pointer">
+          <span>By APAAR: 640192837465</span>
+        </button>
+      `;
     }
   } catch (e) {
-    container.innerHTML = '';
+    container.innerHTML = `
+      <button onclick="document.getElementById('verifyInputCode').value='VP-SAMPLE-2026'; verifyCodeFromInput();" class="bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 px-3 py-1 rounded-lg font-mono font-bold transition flex items-center space-x-1.5 cursor-pointer shadow-xs">
+        <i class="fa-solid fa-certificate text-purple-600"></i>
+        <span>Sample: VP-SAMPLE-2026 (Priya Patel)</span>
+      </button>
+    `;
   }
 }
 
@@ -858,42 +1022,123 @@ async function verifyCodeFromInput() {
 }
 
 // ==========================================
-// 5. ONE-CLICK DEMO SCENARIO SHORTCUTS
+// 5. REGULATORY AUDIT CASE SCENARIOS
 // ==========================================
-function runScenario(type) {
-  if (type === 'genuine') {
-    switchPortal('student');
-    document.getElementById('studentSelect').value = '820194827103';
-    loadStudentData();
-  } else if (type === 'ghost') {
-    switchPortal('aicte');
-    setTimeout(() => inspectCase('claim_ghost'), 300);
-  } else if (type === 'duplicate') {
-    switchPortal('aicte');
-    setTimeout(() => inspectCase('claim_vikram_abc'), 300);
-  } else if (type === 'nri') {
-    switchPortal('aicte');
-    switchAicteTab('ledger');
-  } else if (type === 'dispute') {
-    switchPortal('aicte');
-    setTimeout(() => inspectCase('claim_rohan_abc'), 300);
+const scenarioExplanations = {
+  genuine: {
+    badge: 'Case 01 · Standard Admission',
+    text: 'Student Ananya Verma (APAAR: 8201-9482-7103) cleared all 5 verification layers. Student confirmed admission; AICTE countersigned and issued W3C Verifiable Credential with Ed25519 digital signature.'
+  },
+  ghost: {
+    badge: 'Case 02 · Ghost Identity Alert',
+    text: 'Aarav Gupta submitted with fictitious APAAR (9999-9999-9999). Layer 1 failed (Ghost Identity Alert). System assigned Risk Score 65 (HIGH) and routed to Priority Investigation Queue.'
+  },
+  duplicate: {
+    badge: 'Case 03 · Dual Enrolment Caught',
+    text: 'Vikramaditya Rao (APAAR: 7302-8471-9284) claimed by ABC Tech AND Delhi College. Layer 4 caught simultaneous degree-granting enrolment. Both institutions and AICTE alerted.'
+  },
+  nri: {
+    badge: 'Case 04 · Statutory Quota Breach',
+    text: 'ABC Tech enrolled 11 NRI students against approved sanction of 9. Seat Ledger triggered AICTE Approval Process Handbook (APH) Section 4.3.2 statutory violation alert (+2 excess seats).'
+  },
+  dispute: {
+    badge: 'Case 05 · Student Enrolment Dispute',
+    text: 'Student Rohan Sharma independently signed into portal and reported: "I never took admission here". System automatically froze claim, escalated to CRITICAL priority, and locked credential minting.'
+  }
+};
+
+async function runScenario(type) {
+  // Update button active styles
+  document.querySelectorAll('.scenario-btn').forEach(btn => {
+    btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-400');
+    btn.classList.add('bg-slate-800', 'text-slate-200', 'border-slate-700');
+  });
+  const activeBtn = document.getElementById(`btn-scen-${type}`);
+  if (activeBtn) {
+    activeBtn.classList.remove('bg-slate-800', 'text-slate-200', 'border-slate-700');
+    activeBtn.classList.add('bg-blue-600', 'text-white', 'border-blue-400');
+  }
+
+  // Update explanation banner
+  const exp = scenarioExplanations[type];
+  if (exp) {
+    const badgeEl = document.getElementById('activeScenarioBadge');
+    const textEl = document.getElementById('scenarioExplanationText');
+    if (badgeEl) badgeEl.textContent = exp.badge;
+    if (textEl) textEl.textContent = exp.text;
+  }
+
+  // Check if claims exist in priority queue or institution list
+  try {
+    const qRes = await fetch('/api/aicte/risk-queue');
+    const { queue } = await qRes.json();
+    
+    if (type === 'nri') {
+      switchPortal('aicte');
+      switchAicteTab('ledger');
+      return;
+    }
+
+    if (type === 'ghost') {
+      switchPortal('aicte');
+      const ghostCase = queue.find(c => c.l1_identity_passed === 0 || c.id === 'claim_ghost');
+      if (ghostCase) {
+        inspectCase(ghostCase.id);
+      } else {
+        alert('No Ghost Identity claim found in the database. Please go to the Institution Portal and upload the demo CSV batch first!');
+      }
+    } else if (type === 'duplicate') {
+      switchPortal('aicte');
+      const dupCase = queue.find(c => c.l4_duplicate_clear === 0 || c.id === 'claim_vikram_abc');
+      if (dupCase) {
+        inspectCase(dupCase.id);
+      } else {
+        alert('No Dual Enrolment claim found in the database. Please go to the Institution Portal and upload the demo CSV batch first!');
+      }
+    } else if (type === 'dispute') {
+      switchPortal('aicte');
+      const dispCase = queue.find(c => c.status === 'DISPUTED' || c.id === 'claim_rohan_abc');
+      if (dispCase) {
+        inspectCase(dispCase.id);
+      } else {
+        alert('No Disputed claim found in the database. In the Student Portal, students can independently confirm or dispute any admission claim.');
+      }
+    } else if (type === 'genuine') {
+      switchPortal('student');
+      loadStudentData();
+    }
+  } catch (err) {
+    console.error('Scenario error:', err);
   }
 }
 
 async function resetDemo() {
-  if (!confirm('Reset VidyaPramaan database to initial demo state?')) return;
+  if (!confirm('Reset VidyaPramaan to pristine clean state (0 claims)?\nAll student claims will be cleared so nothing is visible before demo upload.')) return;
   try {
     const res = await fetch('/api/demo/reset', { method: 'POST' });
     const data = await res.json();
-    alert(data.message);
+    alert('System reset to clean state (0 claims). Nothing about student data is visible until demo CSV is uploaded.');
     activeCaseClaimId = null;
-    switchPortal('aicte');
+    if (currentPortal === 'institution') {
+      loadInstitutionData();
+    } else if (currentPortal === 'student') {
+      loadStudentData();
+    } else if (currentPortal === 'verifier') {
+      loadQuickVerifySamples();
+    } else {
+      loadAicteData();
+    }
   } catch (e) {
     alert('Reset failed: ' + e.message);
   }
 }
 
-// Boot default
-document.addEventListener('DOMContentLoaded', () => {
-  switchPortal('aicte');
+// Boot default: Guarantee pristine 0-claims state on every browser page load/refresh
+document.addEventListener('DOMContentLoaded', async () => {
+  try {
+    await fetch('/api/demo/reset', { method: 'POST' });
+  } catch (e) {
+    console.error('Auto-clean on boot error:', e);
+  }
+  switchPortal('institution');
 });

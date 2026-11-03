@@ -111,6 +111,93 @@ class RiskScoringEngine {
       factors
     };
   }
+
+  /**
+   * Section 5.5 & 7: Institution Anomaly Detector
+   * Evaluates 10 institutional features and returns anomaly score,
+   * anomaly flag, and explainable factors.
+   */
+  static detectInstitutionAnomaly(features) {
+    const {
+      institutionId,
+      institutionName = 'Unknown',
+      intakeUtilizationPct = 100,
+      nriPct = 5,
+      supernumeraryPct = 5,
+      duplicateRate = 0,
+      disputeRate = 0,
+      avgVerificationPassRate = 0.95,
+      lateSubmissionFlag = 0,
+      historicalViolationCount = 0,
+      dataQualityScore = 0.95
+    } = features;
+
+    let anomalyScore = 0;
+    const factors = [];
+
+    // Over-admitting check
+    if (intakeUtilizationPct > 105) {
+      const penalty = Math.min(35, Math.round((intakeUtilizationPct - 100) * 1.5));
+      anomalyScore += penalty;
+      factors.push(`Intake utilization ${intakeUtilizationPct}% exceeds sanctioned 100% cap (+${penalty})`);
+    }
+
+    // High dispute rate (> 5%)
+    if (disputeRate > 0.05) {
+      anomalyScore += 30;
+      factors.push(`High student dispute rate ${(disputeRate * 100).toFixed(1)}% (Threshold: 5%) (+30)`);
+    }
+
+    // High duplicate rate (> 2%)
+    if (duplicateRate > 0.02) {
+      anomalyScore += 25;
+      factors.push(`Abnormal cross-institution duplicate rate ${(duplicateRate * 100).toFixed(1)}% (+25)`);
+    }
+
+    // Excessive NRI proportion (> 15% statutory cap)
+    if (nriPct > 15) {
+      anomalyScore += 20;
+      factors.push(`NRI admissions ${nriPct.toFixed(1)}% violate 15% statutory cap (APH Section 4.3.2) (+20)`);
+    }
+
+    // Low verification pass rate (< 75%)
+    if (avgVerificationPassRate < 0.75) {
+      anomalyScore += 15;
+      factors.push(`Low automated 5-layer verification pass rate ${(avgVerificationPassRate * 100).toFixed(1)}% (+15)`);
+    }
+
+    // Historical violations (> 2)
+    if (historicalViolationCount > 2) {
+      anomalyScore += 15;
+      factors.push(`${historicalViolationCount} prior regulatory violations on record (+15)`);
+    }
+
+    // Poor data quality / missing APAAR rate
+    if (dataQualityScore < 0.8) {
+      anomalyScore += 10;
+      factors.push(`Data quality score ${(dataQualityScore * 100).toFixed(0)}% below 80% baseline (+10)`);
+    }
+
+    const clampedScore = Math.min(anomalyScore, 100);
+    const isAnomaly = clampedScore >= 50;
+
+    let riskLevel = 'LOW';
+    if (clampedScore >= 70) riskLevel = 'CRITICAL';
+    else if (clampedScore >= 50) riskLevel = 'HIGH';
+    else if (clampedScore >= 30) riskLevel = 'MEDIUM';
+
+    return {
+      institutionId,
+      institutionName,
+      anomalyScore: clampedScore,
+      isAnomaly,
+      riskLevel,
+      factors,
+      requiresRegulatoryAudit: isAnomaly,
+      timestamp: new Date().toISOString()
+    };
+  }
 }
 
 module.exports = RiskScoringEngine;
+

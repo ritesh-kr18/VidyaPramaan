@@ -1,0 +1,5 @@
+apaar_id,student_name,date_of_birth,gender,programme,branch,academic_year,seat_type,admission_category,allotment_authority,allotment_reference,fee_payment_reference
+640192837465,Priya Patel,2004-03-30,Female,B.Tech,Computer Science and Engineering,2026-27,Regular,Open,State CET Cell (Maharashtra),MHT-CET-2026-ABC-02,TXN9910293810
+888877776666,Sameer Deshmukh,2004-06-18,Male,B.Tech,Computer Science and Engineering,2026-27,Regular,Open,Direct Quota,MHT-UNVERIFIED-99,TXN4488229911
+730284719284,Vikramaditya Rao,2003-12-10,Male,B.Tech,Computer Science and Engineering,2026-27,Regular,Open,Institutional Admission,ABC-MGMT-7302,TXN7391028472
+,Kavita Singhania,2004-09-12,Female,B.Tech,Computer Science and Engineering,2026-27,NRI,NRI,Management Quota,NRI-QUOTA-2026-12,TXN8833991122

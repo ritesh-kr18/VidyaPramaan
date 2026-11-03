@@ -136,6 +136,7 @@ class VerificationEngine {
     let l4_detail = 'Duplicate Check Clean: No cross-institutional double enrolment detected';
     let conflictingClaimId = null;
 
+    // Check 1: Exact APAAR match across institutions
     if (claim.apaar_id) {
       const dupStmt = db.prepare(`
         SELECT c.*, i.name as conflicting_inst_name 
@@ -143,15 +144,72 @@ class VerificationEngine {
         JOIN institutions i ON c.institution_id = i.id
         WHERE c.apaar_id = ? 
           AND c.academic_year = ? 
+          AND c.institution_id != ?
           AND c.id != ?
           AND c.status NOT IN ('REJECTED')
       `);
-      const duplicate = dupStmt.get(claim.apaar_id, claim.academic_year, claim.id);
+      const duplicate = dupStmt.get(claim.apaar_id, claim.academic_year, claim.institution_id, claim.id);
 
       if (duplicate) {
         l4_clear = 0;
         conflictingClaimId = duplicate.id;
-        l4_detail = `DUPLICATE DETECTED: Student simultaneously enrolled in ${duplicate.conflicting_inst_name} (${duplicate.programme})`;
+        l4_detail = `DUPLICATE DETECTED (Exact APAAR): Student simultaneously enrolled in ${duplicate.conflicting_inst_name} (${duplicate.programme})`;
+      } else {
+        const altStmt = db.prepare(`
+          SELECT a.*, i.name as conflicting_inst_name 
+          FROM allotment_registry a
+          JOIN institutions i ON a.allotted_institution_id = i.id
+          WHERE a.apaar_id = ? 
+            AND a.academic_year = ? 
+            AND a.allotted_institution_id != ?
+        `);
+        const altDup = altStmt.get(claim.apaar_id, claim.academic_year, claim.institution_id);
+        if (altDup) {
+          l4_clear = 0;
+          l4_detail = `DUPLICATE DETECTED: Student already holds confirmed admission seat in ${altDup.conflicting_inst_name} (${altDup.programme}) via ${altDup.allotment_authority}`;
+        }
+      }
+    }
+
+    // Check 2: Name + DOB match across institutions (for non-APAAR or altered APAAR)
+    if (l4_clear === 1 && claim.student_name && claim.date_of_birth) {
+      const fuzzyStmt = db.prepare(`
+        SELECT c.*, i.name as conflicting_inst_name 
+        FROM enrolment_claims c
+        JOIN institutions i ON c.institution_id = i.id
+        WHERE LOWER(TRIM(c.student_name)) = LOWER(TRIM(?))
+          AND c.date_of_birth = ?
+          AND c.academic_year = ?
+          AND c.institution_id != ?
+          AND c.id != ?
+          AND c.status NOT IN ('REJECTED')
+      `);
+      const fuzzyDuplicate = fuzzyStmt.get(
+        claim.student_name,
+        claim.date_of_birth,
+        claim.academic_year,
+        claim.institution_id,
+        claim.id
+      );
+
+      if (fuzzyDuplicate) {
+        l4_clear = 0;
+        conflictingClaimId = fuzzyDuplicate.id;
+        l4_detail = `DUPLICATE DETECTED (Name & DOB Match): Identical identity enrolled concurrently in ${fuzzyDuplicate.conflicting_inst_name} (${fuzzyDuplicate.programme})`;
+      } else {
+        const altFuzzyStmt = db.prepare(`
+          SELECT a.*, i.name as conflicting_inst_name 
+          FROM allotment_registry a
+          JOIN institutions i ON a.allotted_institution_id = i.id
+          WHERE LOWER(TRIM(a.student_name)) = LOWER(TRIM(?))
+            AND a.academic_year = ?
+            AND a.allotted_institution_id != ?
+        `);
+        const altFuzzy = altFuzzyStmt.get(claim.student_name, claim.academic_year, claim.institution_id);
+        if (altFuzzy) {
+          l4_clear = 0;
+          l4_detail = `DUPLICATE DETECTED (Name Match): Student already holds confirmed admission seat in ${altFuzzy.conflicting_inst_name} (${altFuzzy.programme}) via ${altFuzzy.allotment_authority}`;
+        }
       }
     }
 

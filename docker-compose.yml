@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  vidyapramaan:
+    build: .
+    container_name: vidyapramaan-prototype
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - vidyapramaan_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  vidyapramaan_data:

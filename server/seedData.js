@@ -4,8 +4,8 @@ const crypto = require('node:crypto');
 const SeatLedgerEngine = require('./seatLedgerEngine');
 const VerificationEngine = require('./verificationEngine');
 
-function seedDatabase() {
-  console.log('🌱 Seeding VidyaPramaan database with realistic AICTE ecosystem data...');
+function seedMasterData() {
+  console.log('🏛️ Seeding Master Ecosystem Data (Institutions, Seat Quotas, Central APAAR Mock, Allotments)...');
 
   // 1. Seed Institutions
   const insertInst = db.prepare(`
@@ -50,7 +50,7 @@ function seedDatabase() {
     '+91-11-27891234'
   );
 
-  // 2. Seed Seat Matrices
+  // 2. Seed Seat Matrices (AICTE APH 2026-27 Approved Capacities)
   const insertSeat = db.prepare(`
     INSERT OR REPLACE INTO seat_matrix 
     (id, institution_id, programme, branch, academic_year, seat_category, approved_intake, aph_reference)
@@ -70,7 +70,7 @@ function seedDatabase() {
   // Delhi College Seat Matrix
   insertSeat.run('sm_delhi_reg', 'inst_delhi', 'B.Tech', 'Computer Science and Engineering', '2026-27', 'Regular', 60, 'APH-2026-27-SEC-3.1');
 
-  // 3. Seed Students Master (APAAR / Central Repository Mock)
+  // 3. Seed Students Master (Central APAAR / DigiLocker Vault Mock)
   const insertStudent = db.prepare(`
     INSERT OR REPLACE INTO students_master 
     (apaar_id, name, date_of_birth, gender, guardian_name, phone_registered, email_registered, aadhaar_ref_hash)
@@ -121,7 +121,7 @@ function seedDatabase() {
     crypto.createHash('sha256').update('AADHAAR-HASH-PRIYA').digest('hex')
   );
 
-  // 4. Seed Allotment Registry (JoSAA & State CET)
+  // 4. Seed Allotment Registry (JoSAA & State CET Central Allocation Mock)
   const insertAllotment = db.prepare(`
     INSERT OR REPLACE INTO allotment_registry 
     (allotment_id, apaar_id, student_name, allotted_institution_id, programme, branch, allotment_quota, seat_category, allotment_authority, academic_year)
@@ -167,7 +167,41 @@ function seedDatabase() {
     '2026-27'
   );
 
-  // 5. Seed Pre-Staged Enrolment Claims (Representing Demo Scenarios)
+  // Vikramaditya Rao already holds a verified allotment at Delhi College
+  insertAllotment.run(
+    'DELHI-CET-2026-7302',
+    '730284719284',
+    'Vikramaditya Rao',
+    'inst_delhi',
+    'B.Tech',
+    'Computer Science and Engineering',
+    'OPEN',
+    'Regular',
+    'Delhi Admissions Committee',
+    '2026-27'
+  );
+}
+
+function clearAllClaims() {
+  console.log('🧹 Clearing all enrolment claims, credentials, and verification logs for pristine empty state...');
+  db.prepare(`DELETE FROM student_confirmations`).run();
+  db.prepare(`DELETE FROM verifiable_credentials`).run();
+  db.prepare(`DELETE FROM verification_results`).run();
+  db.prepare(`DELETE FROM intake_violations`).run();
+  db.prepare(`DELETE FROM audit_logs`).run();
+  db.prepare(`DELETE FROM enrolment_claims`).run();
+  console.log('✨ All claims cleared. System is at 0 claims.');
+}
+
+function seedDemoClaims() {
+  console.log('📦 Seeding Pre-Staged Regulatory Inspection Scenarios (Demo Claims)...');
+
+  const insertStudent = db.prepare(`
+    INSERT OR REPLACE INTO students_master 
+    (apaar_id, name, date_of_birth, gender, guardian_name, phone_registered, email_registered, aadhaar_ref_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
   const insertClaim = db.prepare(`
     INSERT OR REPLACE INTO enrolment_claims 
     (id, claim_id, institution_id, apaar_id, student_name, date_of_birth, gender, programme, branch, academic_year, seat_type, admission_category, allotment_authority, allotment_reference, fee_payment_reference, status, submission_hash)
@@ -304,7 +338,6 @@ function seedDatabase() {
     const nriApaar = `9800000000${i.toString().padStart(2, '0')}`;
     const nriName = `NRI Candidate ${i}`;
     
-    // Insert into master
     insertStudent.run(
       nriApaar,
       nriName,
@@ -337,7 +370,7 @@ function seedDatabase() {
     );
   }
 
-  console.log('⚡ Running verification pipeline on initial pre-staged claims...');
+  console.log('⚡ Running 5-layer autonomous verification pipeline on demo claims...');
   const claims = db.prepare(`SELECT id FROM enrolment_claims`).all();
   claims.forEach(c => {
     try {
@@ -347,7 +380,7 @@ function seedDatabase() {
     }
   });
 
-  // Pre-set Rohan's dispute on ABC claim to demonstrate independent confirmation immediately
+  // Pre-set Rohan's dispute on ABC claim
   const rohanConf = db.prepare(`SELECT id FROM student_confirmations WHERE claim_id = 'claim_rohan_abc'`).get();
   if (rohanConf) {
     db.prepare(`
@@ -357,12 +390,10 @@ function seedDatabase() {
           responded_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(rohanConf.id);
-
-    // Re-run pipeline for Rohan's ABC claim to apply dispute lock
     VerificationEngine.runPipeline('claim_rohan_abc');
   }
 
-  // Pre-confirm Ananya's claim to show countersigned flow
+  // Pre-confirm Ananya's claim
   const ananyaConf = db.prepare(`SELECT id FROM student_confirmations WHERE claim_id = 'claim_ananya'`).get();
   if (ananyaConf) {
     db.prepare(`
@@ -374,7 +405,23 @@ function seedDatabase() {
     VerificationEngine.runPipeline('claim_ananya');
   }
 
-  console.log('✅ Database seeded and pipeline executed successfully!');
+  console.log('✅ Demo claims seeded and pipeline executed.');
 }
 
-module.exports = { seedDatabase };
+function seedDatabase(options = {}) {
+  const withClaims = typeof options === 'boolean' ? options : (options && options.withClaims === true);
+  
+  seedMasterData();
+  clearAllClaims();
+
+  if (withClaims) {
+    seedDemoClaims();
+  }
+}
+
+module.exports = { 
+  seedDatabase, 
+  seedMasterData, 
+  clearAllClaims, 
+  seedDemoClaims 
+};
